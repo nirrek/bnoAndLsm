@@ -1,14 +1,13 @@
 // Core Arduino Libraries
-#include <Wire.h>
 #include <SPI.h>
 
-// 3rd Party Libraries
-#include <I2C.h>
-#include <Adafruit_LSM9DS0_Mod.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <utility/imumaths.h>
-#include <Adafruit_Simple_AHRS.h>
+// User libraries
+#include "I2C.h"
+#include "Adafruit_BNO055_Mod.h"
+#include "Adafruit_LSM9DS0_Mod.h"
+#include "Adafruit_Sensor.h"
+#include "Adafruit_Simple_AHRS.h"
+#include "imumaths.h"
 
 // Delay between samplings in milliseconds
 #define SAMPLE_PERIOD_MS 250
@@ -29,6 +28,8 @@ int32_t bnoId = 2;
 Adafruit_BNO055 bno = Adafruit_BNO055(bnoId);
 
 void setup() {
+  Serial.println(F("setup()"));
+
   Serial.begin(115200);
 
   // Ensure that we are able to communicate with the lsm chip
@@ -46,6 +47,7 @@ void setup() {
 
   bno.setExtCrystalUse(true);
 
+  Serial.println(F("ClothMotion"));
 }
 
 sensors_event_t sampleBno;
