@@ -15,21 +15,28 @@
 // Decimal precision of the samples
 #define SAMPLE_PRECISION 4
 
-// Instantiate a model of the lsm9ds0 chip with the provided id.
-int32_t lsmId = 1;
-Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(lsmId);
+// IDs for the chips
+#define LSM_ID 1
+#define BNO_ID 2
 
-// Instantiate an ahrs from the lsm chip
+// Instantiate a model of the lsm9ds0 chip and then wrap it in an AHRS instance
+// to allow for easy querying of roll/pitch/yaw
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(LSM_ID);
 Adafruit_Simple_AHRS ahrs(&lsm.getAccel(), &lsm.getMag());
 
 // Instantiate a model of the bno055 chip with the provided id.
 // Can actually pass (sensorId, address) for this one (unlike previous ones)
-int32_t bnoId = 2;
-Adafruit_BNO055 bno = Adafruit_BNO055(bnoId);
+Adafruit_BNO055 bno = Adafruit_BNO055(BNO_ID);
 
+// Main loops variables for holding sensor samplings.
+sensors_event_t sampleBno;
+sensors_vec_t sampleLsm;
+unsigned long sampleTimestamp;
+
+/**
+ * Initialization function of the firmware.
+ */
 void setup() {
-  Serial.println(F("setup()"));
-
   Serial.begin(115200);
 
   // Ensure that we are able to communicate with the lsm chip
@@ -39,21 +46,20 @@ void setup() {
     exit(1);
   }
 
+  // Ensure that we are able to communicate with the bno chip
   if (!bno.begin()) {
     Serial.println(F("Couldn't initialize bno055. Wiring issues probably"));
     delay(500); // allow serial data to drain
     exit(1);
   }
 
+  // Use the external crystal for improved accuracy
   bno.setExtCrystalUse(true);
-
-  Serial.println(F("ClothMotion"));
 }
 
-sensors_event_t sampleBno;
-sensors_vec_t sampleLsm;
-unsigned long sampleTimestamp;
-
+/**
+ * Main loop of the Arduino firmware.
+ */
 void loop() {
   // Take sensor readings
   sampleTimestamp = millis();
@@ -69,7 +75,7 @@ void loop() {
 }
 
 /**
- * Serializes the sensor sample according to the API, and sends it over the
+ * Serializes the BNO sensor sample according to the API, and sends it over the
  * Serial connection.
  */
 void sendBnoSampleOverSerial(sensors_event_t* event, unsigned long timestamp) {
@@ -97,9 +103,13 @@ void sendBnoSampleOverSerial(sensors_event_t* event, unsigned long timestamp) {
   Serial.println("$"); // message-end sentinel ("$\n")
 }
 
+/**
+ * Serializes the LSM sensor sample according to the API, and sends it over the
+ * Serial connection.
+ */
 void sendLsmSampleOverSerial(sensors_vec_t* orientation, unsigned long timestamp) {
   Serial.print("id ");
-  Serial.print(lsmId);
+  Serial.print(LSM_ID);
   Serial.print(" ");
 
   Serial.print("time ");
